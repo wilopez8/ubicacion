@@ -1,40 +1,99 @@
 import streamlit as st
-from streamlit_js_eval import streamlit_js_eval, copy_to_clipboard, create_share_link, get_geolocation
-import datetime
-import json
-import time
-import pandas as pd
+from streamlit_geolocation import streamlit_geolocation
+from datetime import datetime
 
 
-st.header("Ubicacion")
-st.write("Por favor de click en el boton, tome pantallazo y compartalo para certificar la ubicacion.") 
 
-# Display the current date and time
-current_date  = datetime.datetime.now().strftime("%m-%d-%Y") 
-current_time  = datetime.datetime.now().strftime("%H:%M") 
-
-# Get the location data
-# Extract latitude and longitude
-loc = get_geolocation() 
-latitude = loc['coords']['latitude']
-longitude = loc['coords']['longitude']
-
-# Button to fetch location details
-if st.button("Ubicación y Hora"):
+def get_location():
+    """
+    Function to obtain latitude and longitude using streamlit-geolocation
     
-    # Display the current date and time
-    st.write(f"Fecha: {current_date}")
-    st.write(f"Hora: {current_time}")
+    Returns:
+        dict: Contains latitude, longitude, and other location information if successful
+    """
+    # Initialize session state for location data if it doesn't exist
+    if 'location_data' not in st.session_state:
+        st.session_state.location_data = None
+        
+    # Initialize session state for date and time if they don't exist
+    if 'current_date' not in st.session_state:
+        st.session_state.current_date = None
+    
+    if 'current_time' not in st.session_state:
+        st.session_state.current_time = None
+    
+    # Create a location button
+    location = streamlit_geolocation()
+    
+    # Update session state if location is obtained
+    if location and location != st.session_state.location_data:
+        st.session_state.location_data = location
+    
+        # Update date and time when location is obtained
+        now = datetime.now()
+        st.session_state.current_date = now.strftime("%m-%d-%Y")
+        st.session_state.current_time = now.strftime("%H:%M") 
+    
+        st.rerun()
+    
+    # Display the results if location data exists
+    if st.session_state.location_data:
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+    
+        with col1:
+            st.write("Fecha")
+            st.write(st.session_state.current_date if st.session_state.current_date else "None")
+    
+            st.write("Latitud:", location.get("latitude"))
 
-    # Create a Google Maps link
-    st.write(f"Latitude: {latitude}")
-    st.write(f"Longitude: {longitude}")
-    st.write(f"[Google Maps](https://www.google.com/maps/search/?api=1&query={latitude},{longitude})")
-    # Display the latitude and longitude
+        with col2:
+            st.write("Hora")
+            st.write(st.session_state.current_time if st.session_state.current_time else "None")
+            st.write("Longitud:", location.get("longitude"))
 
-data = pd.DataFrame({
-    'lat': [latitude],  # Latitude values
-    'lon': [longitude]  # Use negative values for west
-})
 
-st.map(data)
+
+        # Return the location data
+        return st.session_state.location_data
+    else:
+        st.info("Click the 'Get Location' button to fetch your coordinates")
+        return None
+    # End of get_location function
+
+def reset_app():
+    """
+    Function to completely reset the application state
+    """
+    # Clear all session state variables
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    
+    # Display a success message
+    st.success("All data has been reset!")
+    
+    # Force a rerun to refresh the page
+    st.rerun()
+
+
+if __name__ == "__main__":
+    st.title("Geolocalización")
+    st.write("Esta App genera sus coordenadas para certificar su ubicacion.")
+    
+    location_data = get_location()
+    
+    if location_data:
+    
+
+        # Example: Show location on a map
+        if location_data.get("latitude") and location_data.get("longitude"):
+            map_data = {
+                "latitude": [location_data.get("latitude")],
+                "longitude": [location_data.get("longitude")]
+            }
+            st.map(map_data)
+    # Add a separator before the reset button
+    st.markdown("---")
+
+    # Reset button placed at the bottom of the app with enhanced styling
+    if st.button("Borrar Datos", type="primary", use_container_width=False): reset_app()
