@@ -49,12 +49,13 @@ def get_location():
         with col1:
             st.write("Fecha")
             st.write(st.session_state.current_date if st.session_state.current_date else "None")
-    
-            st.write("Latitud:", location.get("latitude"))
 
-        with col2:
             st.write("Hora")
             st.write(st.session_state.current_time if st.session_state.current_time else "None")
+
+
+        with col2:
+            st.write("Latitud:", location.get("latitude"))
             st.write("Longitud:", location.get("longitude"))
 
         # Return the location data
