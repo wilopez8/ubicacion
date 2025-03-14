@@ -1,8 +1,7 @@
 import streamlit as st
 from streamlit_geolocation import streamlit_geolocation
 from datetime import datetime
-
-
+import pytz  # Add this import for timezone support
 
 def get_location():
     """
@@ -29,10 +28,16 @@ def get_location():
     if location and location != st.session_state.location_data:
         st.session_state.location_data = location
     
-        # Update date and time when location is obtained
-        now = datetime.now()
-        st.session_state.current_date = now.strftime("%m-%d-%Y")
-        st.session_state.current_time = now.strftime("%H:%M") 
+        # Get the current UTC time
+        utc_now = datetime.now(pytz.UTC)
+        
+        # Convert to Eastern Time (ET)
+        eastern = pytz.timezone('US/Eastern')
+        et_now = utc_now.astimezone(eastern)
+        
+        # Update date and time in Eastern Time
+        st.session_state.current_date = et_now.strftime("%m-%d-%Y")
+        st.session_state.current_time = et_now.strftime("%H:%M")
     
         st.rerun()
     
@@ -51,8 +56,6 @@ def get_location():
             st.write("Hora")
             st.write(st.session_state.current_time if st.session_state.current_time else "None")
             st.write("Longitud:", location.get("longitude"))
-
-
 
         # Return the location data
         return st.session_state.location_data
@@ -83,8 +86,6 @@ if __name__ == "__main__":
     location_data = get_location()
     
     if location_data:
-    
-
         # Example: Show location on a map
         if location_data.get("latitude") and location_data.get("longitude"):
             map_data = {
